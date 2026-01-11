@@ -29,7 +29,9 @@ const choiceNames = {
 choiceBtns.forEach(btn => {
     btn.addEventListener('click', () => {
         const playerChoice = btn.dataset.choice;
-        playRound(playerChoice);
+        if (playerChoice && choiceEmojis[playerChoice]) {
+            playRound(playerChoice);
+        }
     });
 });
 
@@ -42,8 +44,8 @@ function playRound(playerChoice) {
     const result = determineWinner(playerChoice, computerChoice);
     
     // Update displays
-    playerChoiceEl.textContent = choiceEmojis[playerChoice];
-    computerChoiceEl.textContent = choiceEmojis[computerChoice];
+    playerChoiceEl.textContent = choiceEmojis[playerChoice] || '?';
+    computerChoiceEl.textContent = choiceEmojis[computerChoice] || '?';
     
     // Update result text
     updateResultText(result, playerChoice, computerChoice);
@@ -93,8 +95,8 @@ function updateResultText(result, playerChoice, computerChoice) {
     // Remove previous result classes
     resultTextEl.classList.remove('win', 'lose', 'draw');
     
-    const playerName = choiceNames[playerChoice];
-    const computerName = choiceNames[computerChoice];
+    const playerName = choiceNames[playerChoice] || playerChoice;
+    const computerName = choiceNames[computerChoice] || computerChoice;
     
     if (result === 'win') {
         resultTextEl.textContent = `あなたの勝ち！ ${playerName} vs ${computerName}`;
