@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>じゃんけんアニマル バトル・ロイヤル - アーケードエディション</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;900&display=swap');
+        
+        body {
+            font-family: 'M+ PLUS Rounded+ 1c', sans-serif;
+            background-color: #fef2f2;
+            overflow: hidden;
+            touch-action: manipulation;
+            margin: 0;
+            user-select: none;
+        }
+
+        .battle-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .player-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transition: all 0.3s ease;
+            padding: 20px;
+        }
+
+        .p-left { background-color: #fffafb; border-right: 4px solid #fecaca; }
+        .p-right { background-color: #f1f5f9; border-left: 4px solid #cbd5e1; }
+
+        .shake { animation: shakeAnim 0.3s both; }
+        @keyframes shakeAnim {
+            10%, 90% { transform: translate3d(-4px, 0, 0); }
+            20%, 80% { transform: translate3d(8px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-12px, 0, 0); }
+            40%, 60% { transform: translate3d(12px, 0, 0); }
+        }
+
+        .char-sprite { font-size: 8rem; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); margin-bottom: 2rem; }
+
+        .hand-btn {
+            font-size: 2rem;
+            border-radius: 1.2rem;
+            background: white;
+            border: 4px solid #e2e8f0;
+            transition: all 0.2s;
+            box-shadow: 0 6px 0 #cbd5e1;
+            width: 70px;
+            height: 70px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hand-btn:not(:disabled):active { transform: translateY(4px); box-shadow: 0 2px 0 #cbd5e1; }
+        .hand-btn.selected {
+            background: #fef08a;
+            border-color: #facc15;
+            transform: scale(1.1) translateY(-8px);
+            box-shadow: 0 8px 0 #eab308;
+            z-index: 10;
+        }
+
+        .deck-count {
+            position: absolute;
+            top: -8px; right: -8px;
+            background: #ef4444; color: white;
+            border-radius: 50%; width: 24px; height: 24px;
+            font-size: 12px; display: flex; align-items: center; justify-content: center;
+            font-weight: 900; border: 2px solid white;
+        }
+
+        .life-container {
+            position: absolute; top: 80px;
+            display: flex; gap: 4px;
+        }
+        .life-heart { font-size: 1.5rem; color: #ef4444; transition: transform 0.3s; }
+        .life-heart.empty { filter: grayscale(1) opacity(0.2); transform: scale(0.8); }
+
+        #overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9);
+            z-index: 1000; flex-direction: column; align-items: center; justify-content: center; padding: 2rem;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        #overlay.active { display: flex; opacity: 1; }
+
+        .battle-visual-row { display: flex; align-items: center; justify-content: center; gap: 40px; margin-bottom: 40px; }
+        .battle-char-icon { font-size: 5rem; margin-bottom: 10px; }
+        .battle-hand-box {
+            font-size: 4rem; background: white; padding: 1rem; border-radius: 2rem;
+            width: 120px; height: 120px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 0 #cbd5e1;
+        }
+
+        .dialogue-box {
+            background: white; border-radius: 1.5rem; padding: 1.5rem; width: 100%; max-width: 500px;
+            border: 6px solid #f87171; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .particle {
+            position: fixed; pointer-events: none; width: 10px; height: 10px; border-radius: 50%;
+            z-index: 2000; animation: particleAnim 0.8s ease-out forwards;
+        }
+        @keyframes particleAnim {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; translate: var(--tx) var(--ty); }
+        }
+
+        .screen { position: fixed; inset: 0; background: #fef2f2; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .hidden { display: none !important; }
+
+        .stage-banner {
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
+            background: #ef4444; color: white; padding: 6px 30px; border-radius: 999px;
+            font-weight: 900; font-size: 1.2rem; z-index: 50; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .difficulty-btn {
+            background: white; border: 4px solid #e2e8f0; padding: 0.5rem 1.5rem; border-radius: 1rem; font-weight: 900; transition: all 0.2s;
+        }
+        .difficulty-btn.active { background: #ef4444; color: white; border-color: #b91c1c; transform: scale(1.05); }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            width: 100%;
+            max-width: 500px;
+        }
+        .char-card {
+            position: relative;
+            background: #334155;
+            border: 3px solid #64748b;
+            border-radius: 1rem;
+            height: 130px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .char-card:hover { transform: scale(1.05); border-color: #cbd5e1; }
+        .char-card.selected {
+            border-color: #f87171;
+            background: #475569;
+            box-shadow: 0 0 20px rgba(248, 113, 113, 0.8);
+            transform: scale(1.1);
+            z-index: 10;
+        }
+        .char-card .char-icon { font-size: 4rem; }
+        .char-card .char-name-label {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: rgba(0, 0, 0, 0.7); color: white;
+            font-size: 0.8rem; font-weight: 900; text-align: center;
+            padding: 4px 0;
+        }
+
+        .btn-main { background: #ef4444; color: white; padding: 1rem 3.5rem; border-radius: 999px; font-weight: 900; font-size: 1.5rem; box-shadow: 0 6px 0 #b91c1c; transition: all 0.2s; }
+        .btn-main:active { transform: translateY(4px); box-shadow: 0 2px 0 #b91c1c; }
+        .btn-main:disabled { background: #cbd5e1; box-shadow: 0 4px 0 #94a3b8; cursor: not-allowed; }
+
+        .menu-exit-btn {
+            position: fixed; bottom: 20px; left: 20px; z-index: 60;
+            background: #fff; border: 3px solid #cbd5e1; color: #64748b;
+            padding: 10px 20px; border-radius: 15px; font-weight: 900;
+            box-shadow: 0 4px 0 #cbd5e1; transition: all 0.2s;
+        }
+        .menu-exit-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #cbd5e1; }
+    </style>
+</head>
+<body>
+
+    <!-- Title Screen -->
+    <div id="title-screen" class="screen">
+        <div class="text-8xl mb-6">🐾</div>
+        <h1 class="text-5xl font-black text-red-600 mb-2 text-center">じゃんけんアニマル</h1>
+        <p class="text-slate-500 font-bold mb-10 italic">アーケード・ロイヤル</p>
+        
+        <div class="flex flex-col items-center gap-4 mb-10">
+            <p class="text-sm font-black text-slate-400 uppercase tracking-widest">Difficulty</p>
+            <div class="flex gap-2">
+                <button onclick="setDifficulty('easy')" id="diff-easy" class="difficulty-btn">EASY</button>
+                <button onclick="setDifficulty('normal')" id="diff-normal" class="difficulty-btn active">NORMAL</button>
+                <button onclick="setDifficulty('hard')" id="diff-hard" class="difficulty-btn">HARD</button>
+            </div>
+            <div id="difficulty-desc" class="text-xs text-slate-500 font-bold bg-white px-6 py-3 rounded-xl border-2 border-slate-100 max-w-[300px] text-center">
+                適度に手札を使い分け、バランスよく攻めてきます。
+            </div>
+        </div>
+
+        <button onclick="showCharSelect()" class="btn-main">GAME START</button>
+    </div>
+
+    <!-- Character Selection Screen -->
+    <div id="char-select-screen" class="screen hidden">
+        <button onclick="backToTitle()" class="absolute top-6 left-6 bg-slate-200 text-slate-600 px-5 py-2 rounded-xl font-black text-sm">タイトルに戻る</button>
+        <h1 class="text-3xl font-black text-slate-800 mb-10 tracking-tighter italic">CHOOSE YOUR ANIMAL!</h1>
+        <div class="char-grid mb-10" id="char-list"></div>
+        
+        <!-- Skill Info Box -->
+        <div id="skill-detail" class="bg-white p-6 rounded-2xl border-4 border-red-200 w-full max-w-[500px] mb-10 opacity-0 transition-opacity duration-300">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="bg-red-500 text-white text-xs px-3 py-1 rounded-full font-black">SPECIAL SKILL</span>
+                <div class="font-black text-red-600 text-lg" id="detail-skill-name">スキル</div>
+            </div>
+            <div class="text-sm text-slate-600 font-bold leading-relaxed" id="detail-skill-desc">説明文</div>
+        </div>
+        
+        <button id="start-btn" disabled onclick="initArcade()" class="btn-main">FIGHT!</button>
+    </div>
+
+    <!-- Gameplay UI -->
+    <div id="game-ui" class="hidden">
+        <div id="stage-display" class="stage-banner">STAGE 1/3</div>
+        <button id="exit-game-btn" onclick="confirmExit()" class="menu-exit-btn">🏳️ ギブアップ</button>
+
+        <div class="battle-container">
+            <!-- Player Area (Left) -->
+            <div id="p1-area" class="player-area p-left">
+                <div class="life-container" id="p1-life-container"></div>
+                <div id="skill-banner" class="absolute top-10 left-10 bg-red-500 text-white px-4 py-1 rounded-full font-black text-xs shadow-lg animate-bounce hidden">SKILL ACTIVE!</div>
+                <div class="char-sprite" id="p1-sprite">🦁</div>
+                <div id="p1-status" class="bg-white px-6 py-2 rounded-full font-black text-sm mb-6 text-red-600 shadow-sm">あなたの番です</div>
+                <div class="flex gap-4 mb-8">
+                    <button onclick="selectHand(0)" class="hand-btn p1-btn" id="p1-h0">✊<span class="deck-count" id="p1-c0">0</span></button>
+                    <button onclick="selectHand(1)" class="hand-btn p1-btn" id="p1-h1">✌️<span class="deck-count" id="p1-c1">0</span></button>
+                    <button onclick="selectHand(2)" class="hand-btn p1-btn" id="p1-h2">✋<span class="deck-count" id="p1-c2">0</span></button>
+                </div>
+                <button onclick="triggerSkill()" class="bg-red-500 text-white px-10 py-4 rounded-2xl font-black text-xl shadow-lg active:scale-95 transition-all" id="skill-use-btn">
+                    🔥 スキル発動！
+                </button>
+            </div>
+
+            <!-- CPU Area (Right) -->
+            <div id="p2-area" class="player-area p-right">
+                <div class="life-container" id="p2-life-container"></div>
+                <div class="char-sprite" id="p2-sprite">❓</div>
+                <div id="cpu-thinking" class="absolute top-1/2 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-5 py-2 rounded-full text-xs font-black hidden">思考中...</div>
+                <div class="flex gap-4 mt-4 opacity-60">
+                    <div class="hand-btn" id="p2-h0">✊<span class="deck-count" id="p2-c0-cpu">0</span></div>
+                    <div class="hand-btn" id="p2-h1">✌️<span class="deck-count" id="p2-c1-cpu">0</span></div>
+                    <div class="hand-btn" id="p2-h2">✋<span class="deck-count" id="p2-c2-cpu">0</span></div>
+                </div>
+                <div class="mt-10 font-black text-slate-400">ENEMY CPU</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Battle Result Overlay -->
+    <div id="overlay">
+        <div id="round-title" class="text-white text-5xl font-black mb-12 italic tracking-widest">BATTLE!</div>
+        <div class="battle-visual-row">
+            <div class="flex flex-col items-center">
+                <div id="battle-char-p1" class="battle-char-icon">🦁</div>
+                <div id="p1-result-icon" class="battle-hand-box"></div>
+            </div>
+            <div id="attack-direction" class="text-white text-6xl font-black">⚔️</div>
+            <div class="flex flex-col items-center">
+                <div id="battle-char-p2" class="battle-char-icon">🐰</div>
+                <div id="p2-result-icon" class="battle-hand-box"></div>
+            </div>
+        </div>
+        <div class="dialogue-box">
+            <p id="dialogue-content" class="text-2xl font-black text-slate-800"></p>
+        </div>
+        <div id="overlay-controls" class="flex gap-4 mt-12">
+            <button id="next-btn" class="bg-white text-red-600 px-20 py-5 rounded-full font-black text-3xl shadow-2xl active:scale-90 transition-all">NEXT</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Audio Engine ---
+        let audioCtx = null;
+        let bgmInterval = null;
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            startBGM();
+        }
+
+        function playTone(freq, type, duration, vol=0.1) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function startBGM() {
+            if (!audioCtx || bgmInterval) return;
+            const sequence = [261.63, 293.66, 329.63, 349.23, 392.00, 349.23, 329.63, 293.66];
+            let i = 0;
+            bgmInterval = setInterval(() => {
+                playTone(sequence[i % sequence.length], 'triangle', 0.4, 0.03);
+                i++;
+            }, 500);
+        }
+
+        function soundDecide() { playTone(440, 'sine', 0.2); setTimeout(() => playTone(880, 'sine', 0.2), 50); }
+        function soundAttackSuccess() { playTone(880, 'sine', 0.1); setTimeout(() => playTone(1320, 'sine', 0.2), 50); }
+        function soundTakeDamage() { playTone(100, 'sawtooth', 0.3, 0.2); playTone(60, 'sawtooth', 0.3, 0.2); }
+        function soundWin() { [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.3), i*100)); }
+        
+        function soundEnding() {
+            const fanfare = [523, 523, 523, 523, 415, 466, 523, 466, 523];
+            fanfare.forEach((f, i) => {
+                setTimeout(() => playTone(f, 'square', 0.6, 0.15), i * 200);
+            });
+            setTimeout(() => {
+                [523, 659, 783, 1046, 1318].forEach((f, i) => {
+                    setTimeout(() => playTone(f, 'square', 1.0, 0.1), i * 50);
+                });
+            }, 1800);
+        }
+
+        // --- Game Data ---
+        const MAX_LIFE_PLAYER = 5;
+        let difficulty = 'normal';
+
+        const characterData = [
+            { id: 'leo', icon: '🦁', name: 'LEO', skillName: '一撃', skillDesc: '次の勝利時、相手に2ダメージ与える。', skillType: 'double_damage', quotes: { start: "俺の爪からは逃げられないぜ！", win: "ガオー！俺の勝ちだ！", lose: "嘘だ…俺が負けるなんて…" } },
+            { id: 'luna', icon: '🐰', name: 'LUNA', skillName: '復活', skillDesc: '自分のライフを1回復する。', skillType: 'heal', quotes: { start: "ぴょんぴょん跳ねちゃうよ！", win: "えへへ、私の勝ちだね！", lose: "うぅ…耳が痛いよぉ…" } },
+            { id: 'kon', icon: '🦊', name: 'KON', skillName: '盗聴', skillDesc: '相手の次の手を完全予知する。', skillType: 'spy', quotes: { start: "君の考えはすべてお見通しだよ。", win: "コンコン！計算通りだね。", lose: "ボロが出ちゃったかなぁ…" } },
+            { id: 'kuma', icon: '🐻', name: 'KUMA', skillName: '粉砕', skillDesc: '相手の最多手札を全て破壊する。', skillType: 'break', quotes: { start: "のっそり行くぞ、覚悟しろ！", win: "うおぉん！力が有り余ってるぜ！", lose: "冬眠の時間かな…" } },
+            { id: 'pan', icon: '🐼', name: 'PAN', skillName: '補充', skillDesc: '自分の手札を即座に全回復する。', skillType: 'refill', quotes: { start: "笹を食べる暇もないね。", win: "のんびり勝っちゃった。", lose: "もう動けないよぉ…" } },
+            { id: 'koa', icon: '🐨', name: 'KOA', skillName: '相打', skillDesc: '「あいこ」で自分無傷・敵1ダメージ。', skillType: 'draw_win', quotes: { start: "ユーカリ食べてる間に終わるよ。", win: "おやすみなさい…勝利の夢を。", lose: "木から落ちちゃった…" } },
+            { id: 'boss', icon: '🐲', name: '神龍王', skillName: '超越', skillDesc: '圧倒的な力でねじ伏める。', skillType: 'none', quotes: { start: "人間よ、その勇気…試させてもらおう。", win: "これが神の力よ。", lose: "見事だ…人間の可能性、信じてみよう。" } }
+        ];
+
+        let currentStage = 0;
+        let myChar = null;
+        let enemyChar = null;
+        let p1Life, p2Life, p1Deck, p2Deck;
+        let p1Choice = null, p2Choice = null;
+        let skillUsed = false, skillActive = false;
+        let reservedCpuMove = null; // キツネのスキル用：予約されたCPUの手
+
+        function setDifficulty(lvl) {
+            difficulty = lvl;
+            soundDecide();
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.id === `diff-${lvl}`);
+            });
+            const desc = document.getElementById('difficulty-desc');
+            const texts = {
+                easy: "CPUは適当に手を出します。練習に最適です。",
+                normal: "適度に手札を使い分け、バランスよく攻めてきます。",
+                hard: "手札の残り状況やプレイヤーのスキルを分析し、最適解で勝ちに来ます。"
+            };
+            desc.innerText = texts[lvl];
+        }
+
+        function showCharSelect() {
+            initAudio();
+            soundDecide();
+            document.getElementById('title-screen').classList.add('hidden');
+            document.getElementById('char-select-screen').classList.remove('hidden');
+            const list = document.getElementById('char-list');
+            list.innerHTML = '';
+            
+            characterData.filter(c => c.id !== 'boss').forEach(char => {
+                const card = document.createElement('div');
+                card.className = 'char-card';
+                card.id = `card-${char.id}`;
+                card.onclick = () => { selectMyChar(char); soundDecide(); };
+                
+                card.innerHTML = `
+                    <div class="char-icon">${char.icon}</div>
+                    <div class="char-name-label">${char.name}</div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function backToTitle() {
+            soundDecide();
+            document.getElementById('char-select-screen').classList.add('hidden');
+            document.getElementById('title-screen').classList.remove('hidden');
+        }
+
+        function confirmExit() {
+            soundDecide();
+            showDialogue("EXIT", "本当に降参してメニューに戻りますか？", () => {
+                location.reload();
+            });
+        }
+
+        function selectMyChar(char) {
+            myChar = char;
+            document.querySelectorAll('.char-card').forEach(c => {
+                c.classList.toggle('selected', c.id === `card-${char.id}`);
+            });
+            const detail = document.getElementById('skill-detail');
+            document.getElementById('detail-skill-name').innerText = char.skillName;
+            document.getElementById('detail-skill-desc').innerText = char.skillDesc;
+            detail.style.opacity = "1";
+            document.getElementById('start-btn').disabled = false;
+        }
+
+        function initArcade() {
+            soundDecide();
+            currentStage = 0;
+            document.getElementById('char-select-screen').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+            startBattle();
+        }
+
+        function createDeck(isPlayer = true) {
+            let deck = [0, 0, 1, 1, 2, 2];
+            if (!isPlayer) {
+                if (difficulty === 'easy') deck = [0, 1, 2];
+                else if (difficulty === 'hard') deck = [0, 0, 0, 1, 1, 1, 2, 2, 2];
+            }
+            if (difficulty !== 'easy' || isPlayer) {
+                deck.push(Math.floor(Math.random() * 3));
+            }
+            return deck.sort(() => Math.random() - 0.5);
+        }
+
+        function startBattle() {
+            const arcadeStages = [
+                { name: "ROOKIE RABBIT", id: 'luna', life: difficulty === 'easy' ? 2 : (difficulty === 'hard' ? 4 : 3) },
+                { name: "MASTER FOX", id: 'kon', life: difficulty === 'easy' ? 4 : (difficulty === 'hard' ? 7 : 5) },
+                { name: "GOD DRAGON", id: 'boss', life: difficulty === 'easy' ? 6 : (difficulty === 'hard' ? 10 : 8) }
+            ];
+
+            const stage = arcadeStages[currentStage];
+            enemyChar = characterData.find(c => c.id === stage.id);
+            
+            document.getElementById('stage-display').innerText = `STAGE ${currentStage + 1}/3`;
+            document.getElementById('p1-sprite').innerText = myChar.icon;
+            document.getElementById('p2-sprite').innerText = enemyChar.icon;
+            
+            document.getElementById('battle-char-p1').innerText = myChar.icon;
+            document.getElementById('battle-char-p2').innerText = enemyChar.icon;
+
+            resetRoundUI();
+            
+            p1Life = MAX_LIFE_PLAYER;
+            p2Life = stage.life;
+            p1Deck = createDeck(true);
+            p2Deck = createDeck(false);
+            skillUsed = false;
+            skillActive = false;
+            reservedCpuMove = null;
+            
+            updateLifeUI(stage.life);
+            updateDeckUI();
+            updateSkillButtonState();
+            
+            showDialogue(stage.name, enemyChar.quotes.start);
+        }
+
+        function resetRoundUI() {
+            p1Choice = null;
+            p2Choice = null;
+            document.querySelectorAll('.p1-btn').forEach(b => {
+                b.classList.remove('selected');
+                b.disabled = false;
+            });
+            document.getElementById('skill-banner').classList.add('hidden');
+            document.getElementById('cpu-thinking').classList.add('hidden');
+            
+            document.getElementById('p1-result-icon').innerText = "";
+            document.getElementById('p2-result-icon').innerText = "";
+            document.getElementById('attack-direction').innerText = "⚔️";
+        }
+
+        function updateLifeUI(stageMaxLife) {
+            const arcadeStagesLife = difficulty === 'easy' ? [2,4,6] : (difficulty === 'hard' ? [4,7,10] : [3,5,8]);
+            const currentMax = stageMaxLife || arcadeStagesLife[currentStage];
+            const drawHearts = (id, cur, max) => {
+                let h = ''; for(let i=0; i<max; i++) h += `<span class="life-heart ${i>=cur?'empty':''}">❤️</span>`;
+                document.getElementById(id).innerHTML = h;
+            };
+            drawHearts('p1-life-container', p1Life, MAX_LIFE_PLAYER);
+            drawHearts('p2-life-container', p2Life, currentMax);
+        }
+
+        function updateDeckUI() {
+            const counts1 = [0, 0, 0]; p1Deck.forEach(x => counts1[x]++);
+            const counts2 = [0, 0, 0]; p2Deck.forEach(x => counts2[x]++);
+            
+            document.getElementById('p1-c0').innerText = counts1[0];
+            document.getElementById('p1-c1').innerText = counts1[1];
+            document.getElementById('p1-c2').innerText = counts1[2];
+
+            document.getElementById('p1-h0').disabled = (counts1[0] === 0 || p1Choice !== null);
+            document.getElementById('p1-h1').disabled = (counts1[1] === 0 || p1Choice !== null);
+            document.getElementById('p1-h2').disabled = (counts1[2] === 0 || p1Choice !== null);
+
+            document.getElementById('p2-c0-cpu').innerText = counts2[0];
+            document.getElementById('p2-c1-cpu').innerText = counts2[1];
+            document.getElementById('p2-c2-cpu').innerText = counts2[2];
+        }
+
+        function selectHand(idx) {
+            if (p1Choice !== null) return;
+            soundDecide();
+            p1Choice = idx;
+            p1Deck.splice(p1Deck.indexOf(idx), 1);
+            updateDeckUI();
+            document.getElementById(`p1-h${idx}`).classList.add('selected');
+            document.getElementById('cpu-thinking').classList.remove('hidden');
+            setTimeout(cpuThink, 800);
+        }
+
+        function cpuThink() {
+            document.getElementById('cpu-thinking').classList.add('hidden');
+            
+            // 予約された手がある場合（キツネのスキル）
+            if (reservedCpuMove !== null) {
+                p2Choice = reservedCpuMove;
+                reservedCpuMove = null;
+            } else {
+                if (difficulty === 'hard') p2Choice = calculateHardMove();
+                else if (difficulty === 'normal' && Math.random() > 0.5) p2Choice = calculateHardMove();
+                else p2Choice = p2Deck[Math.floor(Math.random() * p2Deck.length)];
+            }
+
+            p2Deck.splice(p2Deck.indexOf(p2Choice), 1);
+            resolveBattle();
+        }
+
+        function calculateHardMove() {
+            const p1Counts = [0, 0, 0]; p1Deck.forEach(x => p1Counts[x]++);
+            const p2Available = [...new Set(p2Deck)];
+            if (p1Life === 1) {
+                for (let move of p2Available) {
+                    for (let p1h = 0; p1h < 3; p1h++) {
+                        if (p1Counts[p1h] > 0 && isWin(move, p1h)) return move;
+                    }
+                }
+            }
+            for (let move of p2Available) {
+                if (p1Counts[(move + 2) % 3] === 0) return move; 
+            }
+            return p2Deck[Math.floor(Math.random() * p2Deck.length)];
+        }
+
+        function isWin(a, b) { return (a === 0 && b === 1) || (a === 1 && b === 2) || (a === 2 && b === 0); }
+
+        function resolveBattle() {
+            const icons = ['✊', '✌️', '✋'];
+            document.getElementById('p1-result-icon').innerText = icons[p1Choice];
+            document.getElementById('p2-result-icon').innerText = icons[p2Choice];
+            
+            document.getElementById('battle-char-p1').innerText = myChar.icon;
+            document.getElementById('battle-char-p2').innerText = enemyChar.icon;
+
+            let res = 0; 
+            if (p1Choice !== p2Choice) res = isWin(p1Choice, p2Choice) ? 1 : -1;
+            if (res === 0 && skillActive && myChar.skillType === 'draw_win') res = 1;
+
+            let msg = "";
+            const arrow = document.getElementById('attack-direction');
+            if (res === 1) {
+                let d = (skillActive && myChar.skillType === 'double_damage') ? 2 : 1;
+                p2Life = Math.max(0, p2Life - d);
+                msg = `<span class="text-orange-600">${myChar.name}の攻撃！ ${d}ダメージ！</span>`;
+                arrow.innerText = "➡️"; 
+                createParticles(window.innerWidth * 0.75, window.innerHeight/2, '#f97316');
+                shakeArea('p2-area');
+                soundAttackSuccess();
+            } else if (res === -1) {
+                p1Life = Math.max(0, p1Life - 1);
+                msg = `<span class="text-blue-600">敵の攻撃！ 1ダメージ！</span>`;
+                arrow.innerText = "⬅️"; 
+                createParticles(window.innerWidth * 0.25, window.innerHeight/2, '#3b82f6');
+                shakeArea('p1-area');
+                soundTakeDamage();
+            } else {
+                msg = "あいこ！";
+                arrow.innerText = "⚔️";
+                playTone(330, 'triangle', 0.2);
+            }
+
+            updateLifeUI();
+            skillActive = false;
+            document.getElementById('skill-banner').classList.add('hidden');
+
+            showDialogue("BATTLE", msg, () => {
+                if (p1Life <= 0) gameOver();
+                else if (p2Life <= 0) stageClear();
+                else nextRound();
+            });
+        }
+
+        function nextRound() {
+            resetRoundUI();
+            if (p1Deck.length === 0) { 
+                p1Deck = createDeck(true); 
+                skillUsed = false; 
+                updateSkillButtonState(); 
+                showDialogue("REFILL", "手札が補充された！スキルも再使用可能！");
+            } else {
+                closeOverlay();
+            }
+            if (p2Deck.length === 0) p2Deck = createDeck(false);
+            updateDeckUI();
+        }
+
+        function stageClear() {
+            soundWin();
+            showDialogue(enemyChar.name, enemyChar.quotes.lose, () => {
+                currentStage++;
+                if (currentStage >= 3) {
+                    soundEnding();
+                    showDialogue("👑 CHAMPION!", "伝説の龍を打ち倒した！君こそがアニマル王者の頂点だ！", () => location.reload());
+                } else {
+                    startBattle();
+                    closeOverlay();
+                }
+            });
+        }
+
+        function gameOver() {
+            playTone(100, 'sawtooth', 1.0, 0.3);
+            showDialogue("GAME OVER", "修行し直してこい！", () => location.reload());
+        }
+
+        function showDialogue(title, text, callback) {
+            document.getElementById('round-title').innerText = title;
+            document.getElementById('dialogue-content').innerHTML = text;
+            const overlay = document.getElementById('overlay');
+            overlay.style.display = 'flex';
+            setTimeout(() => overlay.classList.add('active'), 10);
+            
+            document.getElementById('next-btn').onclick = () => {
+                soundDecide();
+                if (callback) callback();
+                else closeOverlay();
+            };
+        }
+
+        function closeOverlay() {
+            const overlay = document.getElementById('overlay');
+            overlay.classList.remove('active');
+            setTimeout(() => overlay.style.display = 'none', 300);
+        }
+
+        function shakeArea(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('shake');
+            setTimeout(() => el.classList.remove('shake'), 300);
+        }
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = x + 'px'; p.style.top = y + 'px';
+                p.style.backgroundColor = color;
+                p.style.setProperty('--tx', `${(Math.random()-0.5)*300}px`);
+                p.style.setProperty('--ty', `${(Math.random()-0.5)*300}px`);
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 800);
+            }
+        }
+
+        function triggerSkill() {
+            if (skillUsed) return;
+            soundWin();
+            skillUsed = true;
+            updateSkillButtonState();
+            
+            const type = myChar.skillType;
+            let customMsg = `スキル「${myChar.skillName}」発動！`;
+            if (type === 'heal') { p1Life = Math.min(MAX_LIFE_PLAYER, p1Life + 1); updateLifeUI(); }
+            else if (type === 'refill') { p1Deck = createDeck(true); updateDeckUI(); }
+            else if (type === 'spy') {
+                // CPUが次に何を出すかここで決めてしまう（完全予知）
+                if (difficulty === 'hard') reservedCpuMove = calculateHardMove();
+                else reservedCpuMove = p2Deck[Math.floor(Math.random() * p2Deck.length)];
+                
+                const icons = ['✊', '✌️', '✋'];
+                const winIcon = icons[(reservedCpuMove + 2) % 3]; // CPUに勝つ手
+                customMsg += `<br><span class="text-blue-600 text-3xl">敵は「${icons[reservedCpuMove]}」を出すつもりだ！</span><br><br><span class="text-red-600 font-black">「${winIcon}」を出せば勝てるぞ！</span>`;
+            } else if (type === 'break') {
+                const counts = [0,0,0]; p2Deck.forEach(x => counts[x]++);
+                const max = Math.max(...counts);
+                if (max > 0) {
+                    const idx = counts.indexOf(max);
+                    p2Deck = p2Deck.filter(h => h !== idx);
+                    customMsg += `<br><span class="text-red-600">敵の ${["✊","✌️","✋"][idx]} をすべて破壊した！</span>`;
+                    updateDeckUI();
+                }
+            } else {
+                skillActive = true;
+                const banner = document.getElementById('skill-banner');
+                if (banner) banner.classList.remove('hidden');
+            }
+            showDialogue(myChar.name, customMsg);
+        }
+
+        function updateSkillButtonState() {
+            const btn = document.getElementById('skill-use-btn');
+            if (btn) {
+                btn.disabled = skillUsed;
+                btn.style.opacity = skillUsed ? "0.3" : "1";
+            }
+        }
+    </script>
+</body>
+</html>
