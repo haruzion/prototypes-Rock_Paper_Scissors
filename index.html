@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>じゃんけんゲーム - Rock Paper Scissors</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>じゃんけんゲーム</h1>
+        <h2>Rock Paper Scissors</h2>
+        
+        <div class="score-board">
+            <div class="score-item">
+                <h3>あなた</h3>
+                <p class="score" id="player-score">0</p>
+            </div>
+            <div class="score-item">
+                <h3>コンピューター</h3>
+                <p class="score" id="computer-score">0</p>
+            </div>
+        </div>
+
+        <div class="result-display">
+            <p id="result-text">手を選んでください</p>
+            <div class="choices-display">
+                <div class="choice-display">
+                    <p>あなた</p>
+                    <span id="player-choice" class="choice-icon">?</span>
+                </div>
+                <div class="choice-display">
+                    <p>コンピューター</p>
+                    <span id="computer-choice" class="choice-icon">?</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="choices">
+            <button class="choice-btn" data-choice="rock">
+                <span class="choice-emoji">✊</span>
+                <span class="choice-name">グー<br>(Rock)</span>
+            </button>
+            <button class="choice-btn" data-choice="paper">
+                <span class="choice-emoji">✋</span>
+                <span class="choice-name">パー<br>(Paper)</span>
+            </button>
+            <button class="choice-btn" data-choice="scissors">
+                <span class="choice-emoji">✌️</span>
+                <span class="choice-name">チョキ<br>(Scissors)</span>
+            </button>
+        </div>
+
+        <button id="reset-btn" class="reset-btn">リセット (Reset)</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

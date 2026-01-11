@@ -1,0 +1,221 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+}
+
+h1 {
+    color: #333;
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+
+h2 {
+    color: #666;
+    font-size: 1.5em;
+    margin-bottom: 30px;
+    font-weight: normal;
+}
+
+.score-board {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.score-item h3 {
+    color: #555;
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+.score {
+    font-size: 3em;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.result-display {
+    margin: 30px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+#result-text {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.choices-display {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.choice-display {
+    flex: 1;
+}
+
+.choice-display p {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.choice-icon {
+    font-size: 4em;
+    display: block;
+}
+
+.choices {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.choice-btn {
+    background: white;
+    border: 3px solid #667eea;
+    border-radius: 15px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    min-width: 120px;
+}
+
+.choice-btn:hover {
+    background: #667eea;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.choice-btn:hover .choice-name {
+    color: white;
+}
+
+.choice-btn:active {
+    transform: translateY(-2px);
+}
+
+.choice-emoji {
+    font-size: 3em;
+}
+
+.choice-name {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #333;
+    line-height: 1.4;
+}
+
+.reset-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 15px 40px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.reset-btn:hover {
+    background: #c82333;
+    transform: scale(1.05);
+}
+
+.reset-btn:active {
+    transform: scale(0.95);
+}
+
+/* Animation for result */
+.result-animation {
+    animation: pulse 0.5s ease;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* Win/Lose/Draw colors */
+.win {
+    color: #28a745 !important;
+}
+
+.lose {
+    color: #dc3545 !important;
+}
+
+.draw {
+    color: #ffc107 !important;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .container {
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 2em;
+    }
+
+    h2 {
+        font-size: 1.2em;
+    }
+
+    .choices {
+        gap: 10px;
+    }
+
+    .choice-btn {
+        min-width: 90px;
+        padding: 15px;
+    }
+
+    .choice-emoji {
+        font-size: 2.5em;
+    }
+
+    .choice-icon {
+        font-size: 3em;
+    }
+}
